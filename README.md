@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IronLog 🔥
 
-## Getting Started
+**Production-grade strength training tracker built with Next.js 16, MongoDB, and a dark gym aesthetic.**
 
-First, run the development server:
+![IronLog Dashboard](dark gym aesthetic with power red accents)
+
+## Features
+
+- 🏋️ **Dashboard** — Today's workout, weekly progress ring, previous session stats
+- 💪 **Active Workout** — Real-time timer, set logging with type (normal/warmup/drop/superset/failed), live 1RM estimation
+- 📈 **Analytics** — Volume by muscle group, strength progression charts, estimated 1RM over time, muscle frequency radar
+- 🗓️ **Calendar** — Monthly view with color-coded completed/rest/missed days and streak tracking
+- 📚 **Exercise Library** — 30+ exercises with muscles, equipment, instructions, alternatives
+- 📤 **Import/Export** — Full JSON backup/restore and template import
+- 🏆 **PR Tracking** — Automatic personal record detection using Epley 1RM formula
+- 🔄 **Smart Scheduling** — Rest days shift the plan forward; workout order is never skipped
+
+## Tech Stack
+
+| Layer     | Tech                                |
+| --------- | ----------------------------------- |
+| Framework | Next.js 16 (App Router, TypeScript) |
+| Database  | MongoDB Native Driver               |
+| Styling   | Tailwind CSS v4                     |
+| Charts    | Recharts                            |
+| Forms     | React Hook Form + Zod v4            |
+| State     | Zustand                             |
+| Icons     | Lucide React                        |
+
+## Quick Start
+
+### 1. Set up MongoDB
+
+Create a `.env.local` file (already created for you):
+
+```bash
+# Local MongoDB
+DB_URL=mongodb://localhost:27017/ironlog
+DB_NAME="IronLog"
+
+# OR MongoDB Atlas
+DB_URL=mongodb+srv://<user>:<password>@cluster.mongodb.net/ironlog
+DB_NAME="IronLog"
+```
+
+### 2. Install dependencies (already done)
+
+```bash
+npm install
+```
+
+### 3. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4. Seed the database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Visit `http://localhost:3000/import-export` and click **"Load Sample Data"**, or make a POST request:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+curl -X POST http://localhost:3000/api/seed
+```
 
-## Learn More
+This seeds:
 
-To learn more about Next.js, take a look at the following resources:
+- **30+ exercises** (chest, back, shoulders, legs, arms, core)
+- **4-day Upper/Lower + Push/Pull split**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 5. Start training!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Go to `http://localhost:3000/dashboard` → Click **Start Workout**
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+├── (app)/               # App shell with sidebar layout
+│   ├── dashboard/       # 🏠 Main dashboard
+│   ├── workout/
+│   │   ├── active/      # 💪 Active session
+│   │   ├── [id]/        # 📋 Session detail
+│   │   └── history/     # 📜 All history
+│   ├── analytics/       # 📊 Charts & stats
+│   ├── exercises/       # 📚 Exercise library
+│   ├── calendar/        # 🗓️ Calendar view
+│   └── import-export/   # 📤 Data management
+├── api/                 # 🔌 REST API routes
+│   ├── seed/
+│   ├── schedule/
+│   ├── workout-logs/
+│   ├── exercises/
+│   ├── analytics/
+│   ├── records/
+│   └── import-export/
+lib/
+├── mongodb.ts           # Connection singleton
+├── db/                  # Collection helpers
+├── engine/
+│   ├── scheduler.ts     # Workout rotation engine
+│   └── progression.ts   # Epley 1RM + progression
+└── validations/         # Zod schemas
+store/
+├── workoutStore.ts      # Active workout state
+└── uiStore.ts           # Sidebar, modals
+types/index.ts           # All TypeScript types
+data/seed.ts             # Sample workout data
+```
+
+## Workout Engine
+
+The scheduling engine follows these rules:
+
+1. User follows a rotating split (A → B → C → D → A → ...)
+2. Taking a rest day does NOT skip a workout — it shifts forward
+3. Workout order is always preserved
+4. The current workout index persists in MongoDB
+
+## Progression Model (Strength-First)
+
+- Hit **top of rep range** on all sets → **increase weight** (+2.5kg)
+- In rep range but not maxed → aim for more reps
+- **Failed below minimum** significantly → **deload 10%**
+- 1RM estimated using the **Epley formula**: `weight × (1 + reps/30)`
+
+## Database Collections
+
+| Collection         | Purpose                              |
+| ------------------ | ------------------------------------ |
+| `users`            | User profile + current workout index |
+| `workoutTemplates` | Workout plan templates               |
+| `exerciseLibrary`  | Exercise database                    |
+| `workoutLogs`      | Completed workout sessions           |
+| `exerciseLogs`     | Per-exercise set data                |
+| `personalRecords`  | PR history                           |
+| `restDays`         | Rest day log                         |
+| `settings`         | User preferences                     |
