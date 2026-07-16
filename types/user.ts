@@ -1,17 +1,11 @@
-export type User = {
-    token: string;
-    name: string;
-    email: string;
-    age?: string;
+import { JwtPayload } from "jsonwebtoken";
+
+export interface User {
+  name: string;
+  userId: string;
+  email: string;
+  workoutId: string;
+  role: "user" | "admin";
 }
-export type SignUpUser = 
-  Omit<User, "token" | "age"> &
-  { password: string };
 
-export type LogInUser = 
-  Omit<User, "token" | "age" | "name"> &
-  { password: string };
-
-export type ForgotPasswordUser = 
-  Omit<User, "token" | "age" | "name"> &
-  { password: string };
+export interface TokenPayload extends User, JwtPayload {}

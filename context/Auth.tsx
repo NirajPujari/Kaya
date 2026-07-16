@@ -1,141 +1,132 @@
 "use client";
 
-import { AuthContextType } from "@types/auth";
-import {
-  ForgotPasswordUser,
-  LogInUser,
-  SignUpUser,
-  User,
-} from "@types/user";
+import { fetchRequest } from "@/lib/api";
+import { AuthContextType } from "@/types/auth";
+import { User } from "@/types/user";
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
-  useCallback,
   ReactNode,
 } from "react";
 
+const TOKEN_KEY = "jwt_token";
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
 
-  const login = useCallback(async (userData: LogInUser) => {
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
+    return !!localStorage.getItem(TOKEN_KEY);
+  });
 
-      if (!res.ok) {
-        const errorBody = await res.json().catch(() => null);
-        throw new Error(errorBody?.message || "Login failed");
-      }
+  // Restore session
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
 
-      const data = await res.json();
-      setUser({ token: data.token, name: data.name, email: data.email });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("token_time", new Date().toString());
-
-      return { success: true };
-    } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, error };
-    }
-  }, []);
-
-  const signup = useCallback(async (userData: SignUpUser) => {
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
-
-      if (!res.ok) {
-        const errorBody = await res.json().catch(() => null);
-        throw new Error(errorBody?.message || "Signup failed");
-      }
-
-      const data = await res.json();
-      return { success: data.success };
-    } catch (error) {
-      console.error("Signup error:", error);
-      return { success: false, error };
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      await fetch("/api/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      setUser(null);
-      localStorage.removeItem("token");
-      localStorage.removeItem("token_time");
-
-      return { success: true };
-    } catch (error) {
-      console.error("Logout error:", error);
-      return { success: false, error };
-    }
-  }, []);
-
-  const autoLog = useCallback(async () => {
-    const token = localStorage.getItem("token");
     if (!token) return;
 
-    try {
-      const res = await fetch("/api/auto", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
+    fetchRequest("/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error();
 
-      if (!res.ok) return;
-
-      const data = await res.json();
-      setUser({ token: data.token, name: data.name, email: data.email });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("token_time", new Date().toString());
-
-      return { success: true };
-    } catch (error) {
-      console.error("Auto login error:", error);
-      return { success: false };
-    }
+        const data = await res.json();
+        setUser(data.user);
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const forgot = useCallback(async (userData: ForgotPasswordUser) => {
-    try {
-      const res = await fetch("/api/forgot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
+  const login = async (email: string, password: string) => {
+    const res = await fetchRequest("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-      if (!res.ok) {
-        const errorBody = await res.json().catch(() => null);
-        throw new Error(errorBody?.message || "Forgot password failed");
-      }
+    if (!res.ok) throw new Error("Login failed");
 
-      const data = await res.json();
-      return { success: data.success };
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      return { success: false, error };
-    }
-  }, []);
+    const data = await res.json();
+
+    localStorage.setItem(TOKEN_KEY, data.token);
+
+    setUser(data.user);
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    const res = await fetchRequest("/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Signup failed");
+
+    const data = await res.json();
+
+    localStorage.setItem(TOKEN_KEY, data.token);
+
+    setUser(data.user);
+  };
+
+  const logout = async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    await fetchRequest("/logout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    localStorage.removeItem(TOKEN_KEY);
+
+    setUser(null);
+  };
+
+  const forgot = async (email: string) => {
+    const res = await fetchRequest("/forgot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to send reset email");
+  };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, signup, logout, autoLog, forgot }}
+      value={{
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+        forgot,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -143,9 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
+  const context = useContext(AuthContext);
+
+  if (!context) {
     throw new Error("useAuth must be used inside AuthProvider");
   }
-  return ctx;
+
+  return context;
 }
