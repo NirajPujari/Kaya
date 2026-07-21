@@ -57,7 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     });
 
-    if (!res.ok) throw new Error("Login failed");
+    if (!res.ok) {
+      let message = "Login failed";
+      try {
+        const errorData = await res.json();
+        message = errorData.message || message;
+      } catch {}
+      throw new Error(message);
+    }
 
     const data = await res.json();
 
@@ -79,7 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     });
 
-    if (!res.ok) throw new Error("Signup failed");
+    if (!res.ok) {
+      let message = "Signup failed";
+      try {
+        const errorData = await res.json();
+        message = errorData.message || message;
+      } catch {}
+      throw new Error(message);
+    }
 
     const data = await res.json();
 
@@ -114,7 +128,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     });
 
-    if (!res.ok) throw new Error("Failed to send reset email");
+    if (!res.ok) {
+      let message = "Failed to send reset email";
+      try {
+        const errorData = await res.json();
+        message = errorData.message || message;
+      } catch {}
+      throw new Error(message);
+    }
   };
 
   return (

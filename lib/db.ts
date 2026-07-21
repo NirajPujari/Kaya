@@ -6,27 +6,10 @@ const dbName = process.env.DB_NAME!;
 if (!uri) throw new Error("DB_URL is missing");
 if (!dbName) throw new Error("DB_NAME is missing");
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
-  }
-
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
-}
+const client: MongoClient = new MongoClient(uri);
+const clientPromise: Promise<MongoClient> = client.connect();
 
 export async function getDb() {
-  const client = await clientPromise;
+  const client: MongoClient = await clientPromise;
   return client.db(dbName);
 }

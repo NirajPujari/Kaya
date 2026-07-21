@@ -16,7 +16,7 @@ const routePermissions: Record<string, Role> = {
   "/api/admin/stats": "admin",
 };
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const method = req.method;
 

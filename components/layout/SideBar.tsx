@@ -9,8 +9,10 @@ import {
   History,
   Settings,
   HeartPulse,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/Auth";
 
 const menuItems = [
   {
@@ -45,6 +47,15 @@ const accountItems = [
 
 export function SideBarContent() {
   const pathname = usePathname();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto py-6">
@@ -101,6 +112,15 @@ export function SideBarContent() {
               </Button>
             );
           })}
+
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="w-full justify-start px-3 py-2.5 transition-all duration-300 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="size-5" />
+            Logout
+          </Button>
         </nav>
       </div>
     </div>

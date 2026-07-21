@@ -1,3 +1,4 @@
+"use client";
 import {
   Card,
   CardContent,
@@ -17,8 +18,9 @@ import {
   ChevronRight,
   Play,
 } from "lucide-react";
-
-export default function Home() {
+import { useAuth } from "@/context/Auth";
+export default function Dashboard() {
+  const { user } = useAuth();
   return (
     <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto">
       <div className="flex justify-between items-end">
@@ -27,7 +29,12 @@ export default function Home() {
             Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
-            Welcome back, Niraj. Here is your fitness overview.
+            Welcome back,{" "}
+            {user?.name
+              .split(" ")
+              .map((name) => name.charAt(0).toLocaleUpperCase() + name.slice(1))
+              .join(" ")}
+            . Here is your fitness overview.
           </p>
         </div>
         <Button className="gap-2">

@@ -4,9 +4,7 @@ import { Noto_Sans, Playfair_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/context/Auth";
 import { Toaster } from "sonner";
-import { TopBar } from "@/components/layout/TopBar";
-import { SideBar } from "@/components/layout/SideBar";
-import { Footer } from "@/components/layout/Footer";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const playfairDisplayHeading = Playfair_Display({
   subsets: ["latin"],
@@ -37,16 +35,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <AuthProvider>
-          <div className="relative flex min-h-screen">
-            <SideBar />
-            <div className="flex flex-1 flex-col w-full">
-              <TopBar />
-              <main className="flex-1 flex flex-col">
-                <div className="flex-1 bg-muted/10 p-6 md:p-8">{children}</div>
-              </main>
-              <Footer />
-            </div>
-          </div>
+          <AppLayout>{children}</AppLayout>
         </AuthProvider>
         <Toaster />
       </body>
